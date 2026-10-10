@@ -94,7 +94,10 @@ if (project.hasProperty('playstore') && project.hasProperty('cloudprovi')) {
     )
 }
 
-def enableSelfUpdate = !project.hasProperty('playstore')
+// Digital Memorial: self-update is off in every build. It downloads upstream GitHub releases,
+// which are signed with another key, so it can never update our Device Owner tablets (and the
+// managed-app installer it also gates would download arbitrary APKs). We ship our own APK.
+def enableSelfUpdate = false
 def enableAccessibilityService = !project.hasProperty('playstore') && !project.hasProperty('cloudprovi')
 
 /**

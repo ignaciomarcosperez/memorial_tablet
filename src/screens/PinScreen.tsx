@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, NativeModules, BackHandler } from 'react-native';
 import PinInput from '../components/PinInput';
 import { StorageService } from '../utils/storage';
@@ -8,6 +8,13 @@ import { grantSettingsAccess } from '../utils/authState';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useTranslation } from 'react-i18next';
+
+/**
+ * The PIN screen goes back to the kiosk on its own after this long without a touch. It is
+ * reachable by anyone who taps the kiosk N times; without a timeout, a visitor who opened it
+ * by accident (or a child) left the kiosk content hidden behind it until staff came by.
+ */
+export const PIN_IDLE_RETURN_MS = 30_000;
 
 type PinScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Pin'>;
 
@@ -110,13 +117,31 @@ const PinScreen: React.FC<PinScreenProps> = ({ navigation }) => {
     navigation.navigate('Kiosk');
   };
 
+  // Idle return: every touch on the screen (PIN keys included) restarts the countdown.
+  const handleBackRef = useRef(handleBack);
+  handleBackRef.current = handleBack;
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restartIdleTimer = useCallback(() => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => {
+      console.log('[PinScreen] Idle, returning to kiosk');
+      handleBackRef.current();
+    }, PIN_IDLE_RETURN_MS);
+  }, []);
+  useEffect(() => {
+    restartIdleTimer();
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    };
+  }, [restartIdleTimer]);
+
   // Wait for migration before showing PIN input
   if (!migrationDone) {
     return <View style={styles.container} />;
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onTouchStart={restartIdleTimer} testID="pin-screen">
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
         <Text style={styles.backButtonText}>{t('general.backToKiosk')}</Text>
       </TouchableOpacity>

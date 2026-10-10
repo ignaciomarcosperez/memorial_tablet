@@ -17,8 +17,14 @@ it holds the product spec, data model, invariants, the FreeKiosk/backend boundar
   (`FREEKIOSK_UPLOAD_*`). Never in this repo. Losing it means Device Owner tablets cannot be updated without a factory
   reset: keep a backup.
 - Build for ARM tablets: `cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`.
-- The GitHub self-update (`UpdateModule.kt`) points at upstream releases, which are signed with another key: it must
-  never be used on our tablets (to disable in DM-027).
+- Our changes to upstream (keep them few and isolated, to stay mergeable):
+  - `android/app/build.gradle`: `enableSelfUpdate = false` in every build. The GitHub self-update (`UpdateModule.kt`)
+    points at upstream releases, signed with another key, so it can never update our Device Owner tablets.
+  - `src/screens/PinScreen.tsx`: back to the kiosk after 30 s without a touch (`PIN_IDLE_RETURN_MS`); test in
+    `__tests__/PinScreenIdleReturn.test.tsx`.
+- Kiosk hardening is configuration, applied by `pnpm tablet:provision` in the product repo (`HARDENING` list).
+- Updating the APK on an installed frame: HyperOS cancels `adb install` while in lock task; leave kiosk mode first
+  (see `../digital-memorial/docs/provisioning.md`).
 
 ## What is FreeKiosk
 

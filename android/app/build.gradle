@@ -8,6 +8,14 @@ def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
+// Digital Memorial: the release key may also come from Gradle project properties
+// (~/.gradle/gradle.properties or -P), so its passwords never have to sit in this repo.
+['FREEKIOSK_UPLOAD_STORE_FILE', 'FREEKIOSK_UPLOAD_STORE_PASSWORD',
+ 'FREEKIOSK_UPLOAD_KEY_ALIAS', 'FREEKIOSK_UPLOAD_KEY_PASSWORD'].each { name ->
+    if (keystoreProperties[name] == null && project.hasProperty(name)) {
+        keystoreProperties[name] = project.property(name)
+    }
+}
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -140,8 +148,7 @@ android {
             keyPassword 'android'
         }
         release {
-            if (keystorePropertiesFile.exists() && 
-                keystoreProperties['FREEKIOSK_UPLOAD_STORE_FILE'] != null) {
+            if (keystoreProperties['FREEKIOSK_UPLOAD_STORE_FILE'] != null) {
                 storeFile file(keystoreProperties['FREEKIOSK_UPLOAD_STORE_FILE'])
                 storePassword keystoreProperties['FREEKIOSK_UPLOAD_STORE_PASSWORD']
                 keyAlias keystoreProperties['FREEKIOSK_UPLOAD_KEY_ALIAS']

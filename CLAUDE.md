@@ -2,6 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**This fork is the device layer of Digital Memorial.** Read `../digital-memorial/docs/MEMORIAL.md` (product repo) before any memorial work:
+it holds the product spec, data model, invariants, the FreeKiosk/backend boundary and the open decisions.
+
+### Digital Memorial build notes
+
+- The fork is pinned to an upstream release tag (currently `v2.0.0-beta.5`); move it only on purpose, by
+  fast-forwarding to a newer tag, and re-test on a real tablet.
+- Toolchain (no Homebrew, no sudo): JDK 17 in `~/Library/Java/jdk-17`, Android SDK in `~/Library/Android/sdk`
+  (platform 36, build-tools 36.0.0, NDK 27.1.12297006, CMake 3.22.1). Export
+  `JAVA_HOME=~/Library/Java/jdk-17/Contents/Home ANDROID_HOME=~/Library/Android/sdk`.
+- `android/gradle.properties` is git-ignored upstream: copy `android/gradle.properties.example` on a fresh clone.
+- Release signing key: `~/.memorial-signing/memorial-release.keystore`, passwords in `~/.gradle/gradle.properties`
+  (`FREEKIOSK_UPLOAD_*`). Never in this repo. Losing it means Device Owner tablets cannot be updated without a factory
+  reset: keep a backup.
+- Build for ARM tablets: `cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`.
+- The GitHub self-update (`UpdateModule.kt`) points at upstream releases, which are signed with another key: it must
+  never be used on our tablets (to disable in DM-027).
+
 ## What is FreeKiosk
 
 FreeKiosk is a free, open-source Android kiosk platform built with React Native + TypeScript, with extensive Kotlin native modules for device control. It is designed as an open alternative to Fully Kiosk Browser.

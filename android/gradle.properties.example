@@ -1,0 +1,15 @@
+# Digital Memorial: copy to android/gradle.properties (git-ignored upstream, because its maintainers keep signing
+# credentials there). Our release key lives in ~/.gradle/gradle.properties instead (see android/app/build.gradle).
+
+# A React Native release build needs more than Gradle's default heap.
+org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+org.gradle.parallel=true
+
+android.useAndroidX=true
+
+# All ABIs by default; for a quicker build of ARM tablets only:
+#   ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+
+newArchEnabled=true
+hermesEnabled=true

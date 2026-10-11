@@ -30,6 +30,7 @@ import {
 import DashboardGrid from '../components/DashboardGrid';
 import type { MediaItem, MediaFitMode } from '../types/mediaPlayer';
 import { ScreenScheduleRule, getNextWakeTime, getActiveSleepRule, getNextSleepTime } from '../types/screenScheduler';
+import { scheduleChanged, type MemorialScreenSchedule } from '../utils/memorialScreenSchedule';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import Icon from '../components/Icon';
@@ -1542,6 +1543,30 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   // dependency array, every call to enterScheduledSleep/exitScheduledSleep would
   // re-trigger this effect and immediately re-evaluate, making it impossible to
   // wake the screen during a sleep window.
+  // Digital Memorial: the display page sends the funeral home's screen schedule (set in the panel). Saved like the
+  // settings screen does, so it survives restarts; the effect below re-arms the scheduler. Waking by touch stays off:
+  // visitors should not switch the frame on at night.
+  const handleMemorialScreenSchedule = useCallback(
+    (schedule: MemorialScreenSchedule) => {
+      if (
+        !screenSchedulerWakeOnTouch &&
+        !scheduleChanged(schedule, { enabled: screenSchedulerEnabled, rules: screenSchedulerRules })
+      ) {
+        return;
+      }
+      console.log('[ScreenScheduler] Schedule from the display page:', JSON.stringify(schedule));
+      Promise.all([
+        StorageService.saveScreenSchedulerEnabled(schedule.enabled),
+        StorageService.saveScreenSchedulerRules(schedule.rules),
+        StorageService.saveScreenSchedulerWakeOnTouch(false),
+      ]).catch((e) => console.error('[ScreenScheduler] Failed to save the schedule:', e));
+      setScreenSchedulerEnabled(schedule.enabled);
+      setScreenSchedulerRules(schedule.rules);
+      setScreenSchedulerWakeOnTouch(false);
+    },
+    [screenSchedulerEnabled, screenSchedulerRules, screenSchedulerWakeOnTouch],
+  );
+
   useEffect(() => {
     // Clear any existing scheduler timer
     if (screenSchedulerTimerRef.current) {
@@ -3038,6 +3063,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
                   : undefined
               }
               onRenderProcessGone={handleWebViewRenderProcessGone}
+              onScreenSchedule={handleMemorialScreenSchedule}
             />
           )}
         </>

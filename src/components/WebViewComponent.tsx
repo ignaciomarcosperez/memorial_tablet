@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback, useImperativeHandle, forwardRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { parseScreenScheduleMessage, type MemorialScreenSchedule } from '../utils/memorialScreenSchedule';
 import {
   View,
   StyleSheet,
@@ -66,6 +67,7 @@ interface WebViewComponentProps {
   customUserAgent?: string; // Custom User-Agent string (empty = default modern Chrome UA)
   basicAuthCredential?: { username: string; password: string };
   onRenderProcessGone?: (didCrash: boolean) => void; // #198 — renderer process died, ask parent to remount
+  onScreenSchedule?: (schedule: MemorialScreenSchedule) => void; // Digital Memorial: schedule from the display page
 }
 
 export interface WebViewComponentRef {
@@ -114,6 +116,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   customUserAgent = '',
   basicAuthCredential,
   onRenderProcessGone,
+  onScreenSchedule,
 }, ref) => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
@@ -971,6 +974,10 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
               })
               .catch((err: any) => console.error('[WebView] TTS getVoices failed:', err));
           }
+        } else if (data.type === 'KIOSK_SCREEN_SCHEDULE') {
+          // Digital Memorial: the display page sends the funeral home's screen schedule.
+          const schedule = parseScreenScheduleMessage(data);
+          if (schedule) onScreenSchedule?.(schedule);
         } else if (data.type === 'PRINT_REQUEST') {
           // Handle print request from window.print()
           PrintModule.printWebView(data.title || 'FreeKiosk Print', data.paperSize || 'A4')

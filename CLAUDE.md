@@ -28,6 +28,11 @@ it holds the product spec, data model, invariants, the FreeKiosk/backend boundar
     Digital Memorial display does, every 30 s) gets remounted after 2 min of silence (hung, blank or native error
     page). Armed per URL once it has reported alive (remembered in AsyncStorage). Test:
     `__tests__/PageAliveWatchdog.test.tsx`.
+  - `src/utils/memorialScreenSchedule.ts` (+ a branch in `WebViewComponent` and a handler in `KioskScreen`): the
+    page can post `{type:'KIOSK_SCREEN_SCHEDULE', enabled, sleepTime, wakeTime}` (the Digital Memorial display
+    sends the funeral home's schedule from the panel, default off 00:00–07:30). It is saved as FreeKiosk's own screen
+    scheduler config (one every-day rule, wake-on-touch off), which turns the screen off and on with native alarms.
+    Test: `__tests__/MemorialScreenSchedule.test.tsx`.
 - Kiosk hardening is configuration, applied by `pnpm tablet:provision` in the product repo (`HARDENING` list).
 - Updating the APK on an installed frame: HyperOS cancels `adb install` while in lock task; leave kiosk mode first
   (see `../digital-memorial/docs/provisioning.md`).

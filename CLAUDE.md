@@ -22,6 +22,8 @@ it holds the product spec, data model, invariants, the FreeKiosk/backend boundar
     points at upstream releases, signed with another key, so it can never update our Device Owner tablets.
   - `src/screens/PinScreen.tsx`: back to the kiosk after 30 s without a touch (`PIN_IDLE_RETURN_MS`); test in
     `__tests__/PinScreenIdleReturn.test.tsx`.
+  - `android/app/build.gradle`: our version numbers (`versionCode` upstream*100 + N, `versionName` upstream +
+    `-dm.N`). Bump them for every APK released to tablets (`pnpm release:apk` in the product repo).
 - Kiosk hardening is configuration, applied by `pnpm tablet:provision` in the product repo (`HARDENING` list).
 - Updating the APK on an installed frame: HyperOS cancels `adb install` while in lock task; leave kiosk mode first
   (see `../digital-memorial/docs/provisioning.md`).

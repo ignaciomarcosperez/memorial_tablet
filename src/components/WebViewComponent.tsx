@@ -1,4 +1,5 @@
-import React, { useRef, useState, useMemo, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback, useImperativeHandle, forwardRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   StyleSheet,
@@ -30,6 +31,11 @@ import type { ProvisioningStatus } from '../utils/CloudSyncService';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useTranslation } from 'react-i18next';
+
+/** Page-alive watchdog (Digital Memorial): how long without KIOSK_PAGE_ALIVE before remounting, and check period. */
+export const PAGE_ALIVE_TIMEOUT_MS = 120_000;
+const PAGE_ALIVE_CHECK_MS = 30_000;
+const PAGE_ALIVE_URL_KEY = '@kiosk_page_alive_url';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -884,8 +890,51 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       .catch((err: any) => fail(err?.code ?? 'ERROR', err?.message ?? 'Printing failed'));
   };
 
+  // Digital Memorial: page-alive watchdog. A page that supports it posts {type:'KIOSK_PAGE_ALIVE'} every ~30 s.
+  // Once a URL has proved it does (remembered across restarts), a silence of PAGE_ALIVE_TIMEOUT_MS means the page
+  // is hung, blank or stuck on the native error page (none of which fire onError reliably), and the WebView is
+  // remounted through the same path as a renderer crash (with its crash-loop guard). Pages that never post the
+  // message are never touched.
+  const lastAliveRef = useRef(Date.now());
+  const watchdogArmedRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    lastAliveRef.current = Date.now();
+    watchdogArmedRef.current = false;
+    AsyncStorage.getItem(PAGE_ALIVE_URL_KEY)
+      .then((armedUrl) => {
+        if (!cancelled && armedUrl === url) watchdogArmedRef.current = true;
+      })
+      .catch(() => {});
+    const timer = setInterval(() => {
+      if (!watchdogArmedRef.current) return;
+      if (Date.now() - lastAliveRef.current < PAGE_ALIVE_TIMEOUT_MS) return;
+      console.warn('[FreeKiosk] Page stopped reporting alive, remounting the WebView');
+      lastAliveRef.current = Date.now();
+      onRenderProcessGone?.(false);
+    }, PAGE_ALIVE_CHECK_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [url, onRenderProcessGone]);
+
   const onMessageHandler = (event: any) => {
     const message = event.nativeEvent.data;
+    if (typeof message === 'string' && message.includes('KIOSK_PAGE_ALIVE')) {
+      try {
+        if (JSON.parse(message).type === 'KIOSK_PAGE_ALIVE') {
+          lastAliveRef.current = Date.now();
+          if (!watchdogArmedRef.current) {
+            watchdogArmedRef.current = true;
+            AsyncStorage.setItem(PAGE_ALIVE_URL_KEY, url).catch(() => {});
+          }
+          return;
+        }
+      } catch {
+        // Not our message: fall through.
+      }
+    }
     
     if (message === 'user-interaction' && onUserInteraction) {
       onUserInteraction();

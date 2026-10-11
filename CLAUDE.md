@@ -24,6 +24,10 @@ it holds the product spec, data model, invariants, the FreeKiosk/backend boundar
     `__tests__/PinScreenIdleReturn.test.tsx`.
   - `android/app/build.gradle`: our version numbers (`versionCode` upstream*100 + N, `versionName` upstream +
     `-dm.N`). Bump them for every APK released to tablets (`pnpm release:apk` in the product repo).
+  - `src/components/WebViewComponent.tsx`: page-alive watchdog. A page that posts `{type:'KIOSK_PAGE_ALIVE'}` (the
+    Digital Memorial display does, every 30 s) gets remounted after 2 min of silence (hung, blank or native error
+    page). Armed per URL once it has reported alive (remembered in AsyncStorage). Test:
+    `__tests__/PageAliveWatchdog.test.tsx`.
 - Kiosk hardening is configuration, applied by `pnpm tablet:provision` in the product repo (`HARDENING` list).
 - Updating the APK on an installed frame: HyperOS cancels `adb install` while in lock task; leave kiosk mode first
   (see `../digital-memorial/docs/provisioning.md`).

@@ -504,7 +504,9 @@ class MainActivity : ReactActivity() {
    */
   private fun applyDefaultLauncherPolicy() {
     if (!devicePolicyManager.isDeviceOwnerApp(packageName)) return
-    val enabled = getAsyncStorageValue("@kiosk_default_launcher", "false") == "true"
+    // Digital Memorial: always on while the kiosk is. HyperOS revokes the autostart permission on every app update, so
+    // after a remote update (MemorialUpdateModule) nothing relaunched the kiosk; as persistent Home, Android does.
+    val enabled = getAsyncStorageValue("@kiosk_default_launcher", "false") == "true" || isKioskEnabled()
     try {
       // Only ever clears persistent preferences set by THIS admin (we set none other than HOME),
       // so this is safe and idempotent — it prevents duplicate entries accumulating.

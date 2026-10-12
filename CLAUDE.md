@@ -40,6 +40,9 @@ it holds the product spec, data model, invariants, the FreeKiosk/backend boundar
     module downloads it (https), checks SHA-256, package, version and signing certificate, and installs it silently
     as Device Owner (BootReceiver relaunches on MY_PACKAGE_REPLACED). `{type:'KIOSK_HELLO'}` gets the installed
     version back through `window.__dmKioskInfo`. Test: `__tests__/MemorialAppUpdate.test.tsx`.
+  - `MainActivity.applyDefaultLauncherPolicy`: FreeKiosk is the persistent Home whenever the kiosk is enabled, not
+    only with the opt-in setting. HyperOS revokes autostart on every update, so MY_PACKAGE_REPLACED could not relaunch
+    the kiosk after a remote update; Android relaunches Home by itself.
 - Kiosk hardening is configuration, applied by `pnpm tablet:provision` in the product repo (`HARDENING` list).
 - Updating the APK on an installed frame: HyperOS cancels `adb install` while in lock task; leave kiosk mode first
   (see `../digital-memorial/docs/provisioning.md`).

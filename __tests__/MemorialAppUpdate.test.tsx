@@ -5,6 +5,7 @@ import {
   applyAppUpdate,
   kioskInfo,
   parseAppUpdateMessage,
+  INSTALL_WAIT_MS,
   resetAppUpdateState,
   UPDATE_RETRY_MS,
 } from '../src/utils/memorialAppUpdate';
@@ -43,6 +44,15 @@ describe('memorial app update', () => {
     expect(n.install).toHaveBeenCalledTimes(1);
     expect(n.install).toHaveBeenCalledWith(update.url, SHA, 5004);
     expect(kioskInfo(n).lastUpdate).toEqual({ versionCode: 5004, result: 'installing', at: 0 });
+  });
+
+  it('tries again an install that never finished', async () => {
+    const n = native();
+    await applyAppUpdate(update, n, 0);
+    await applyAppUpdate(update, n, INSTALL_WAIT_MS - 1);
+    expect(n.install).toHaveBeenCalledTimes(1);
+    await applyAppUpdate(update, n, INSTALL_WAIT_MS + 1);
+    expect(n.install).toHaveBeenCalledTimes(2);
   });
 
   it('ignores the same or an older version', async () => {

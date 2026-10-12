@@ -27,6 +27,8 @@ interface NativeUpdater {
 
 /** After a failed attempt, the same version is retried at most this often. */
 export const UPDATE_RETRY_MS = 6 * 60 * 60 * 1000;
+/** An install that never finished (the app was not replaced) is tried again after this long. */
+export const INSTALL_WAIT_MS = 30 * 60 * 1000;
 
 let lastUpdate: KioskInfo['lastUpdate'] = null;
 
@@ -69,12 +71,9 @@ export async function applyAppUpdate(
   if (!native) return;
   const current = installed(native).versionCode;
   if (current !== null && update.versionCode <= current) return;
-  if (
-    lastUpdate &&
-    lastUpdate.versionCode === update.versionCode &&
-    (lastUpdate.result === 'installing' || now - lastUpdate.at < UPDATE_RETRY_MS)
-  ) {
-    return;
+  if (lastUpdate && lastUpdate.versionCode === update.versionCode) {
+    const pending = lastUpdate.result === 'downloading' || lastUpdate.result === 'installing';
+    if (now - lastUpdate.at < (pending ? INSTALL_WAIT_MS : UPDATE_RETRY_MS)) return;
   }
   lastUpdate = { versionCode: update.versionCode, result: 'downloading', at: now };
   try {

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback, useImperativeHandle, forwardRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { parseScreenScheduleMessage, type MemorialScreenSchedule } from '../utils/memorialScreenSchedule';
+import { applyAppUpdate, kioskInfo, parseAppUpdateMessage } from '../utils/memorialAppUpdate';
 import {
   View,
   StyleSheet,
@@ -922,6 +923,13 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     };
   }, [url, onRenderProcessGone]);
 
+  const replyKioskInfo = () => {
+    const info = JSON.stringify(JSON.stringify(kioskInfo()));
+    webViewRef.current?.injectJavaScript(
+      `window.__dmKioskInfo && window.__dmKioskInfo(JSON.parse(${info})); true;`,
+    );
+  };
+
   const onMessageHandler = (event: any) => {
     const message = event.nativeEvent.data;
     if (typeof message === 'string' && message.includes('KIOSK_PAGE_ALIVE')) {
@@ -974,6 +982,13 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
               })
               .catch((err: any) => console.error('[WebView] TTS getVoices failed:', err));
           }
+        } else if (data.type === 'KIOSK_HELLO') {
+          // Digital Memorial: the display page asks which app version is installed (for its heartbeat).
+          replyKioskInfo();
+        } else if (data.type === 'KIOSK_APP_UPDATE') {
+          // Digital Memorial: the display page passes on a newer release of this app (remote update).
+          const update = parseAppUpdateMessage(data);
+          if (update) applyAppUpdate(update).finally(replyKioskInfo);
         } else if (data.type === 'KIOSK_SCREEN_SCHEDULE') {
           // Digital Memorial: the display page sends the funeral home's screen schedule.
           const schedule = parseScreenScheduleMessage(data);

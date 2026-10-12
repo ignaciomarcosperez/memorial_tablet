@@ -33,6 +33,13 @@ it holds the product spec, data model, invariants, the FreeKiosk/backend boundar
     sends the funeral home's schedule from the panel, default off 00:00–07:30). It is saved as FreeKiosk's own screen
     scheduler config (one every-day rule, wake-on-touch off), which turns the screen off and on with native alarms.
     Test: `__tests__/MemorialScreenSchedule.test.tsx`.
+  - `KioskModule.setScreenAlarm`: the screen schedule alarms are exact alarm clocks (`USE_EXACT_ALARM` in the
+    manifest). HyperOS deferred the upstream inexact alarms by days, so the screen never came back on.
+  - `MemorialUpdateModule.kt` + `src/utils/memorialAppUpdate.ts`: remote updates. The page posts
+    `{type:'KIOSK_APP_UPDATE', versionCode, url, sha256}` (the release published with `pnpm release:publish`); the
+    module downloads it (https), checks SHA-256, package, version and signing certificate, and installs it silently
+    as Device Owner (BootReceiver relaunches on MY_PACKAGE_REPLACED). `{type:'KIOSK_HELLO'}` gets the installed
+    version back through `window.__dmKioskInfo`. Test: `__tests__/MemorialAppUpdate.test.tsx`.
 - Kiosk hardening is configuration, applied by `pnpm tablet:provision` in the product repo (`HARDENING` list).
 - Updating the APK on an installed frame: HyperOS cancels `adb install` while in lock task; leave kiosk mode first
   (see `../digital-memorial/docs/provisioning.md`).

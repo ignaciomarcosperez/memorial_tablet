@@ -27,6 +27,7 @@ class MainApplication : Application(), ReactApplication {
           add(OverlayServicePackage())
           add(SystemInfoPackage())
           add(UpdatePackage())
+          add(MemorialUpdatePackage()) // Digital Memorial: remote updates
           add(ManagedAppInstallerPackage())
           add(SoundPlayerPackage())
           add(HttpServerPackage())

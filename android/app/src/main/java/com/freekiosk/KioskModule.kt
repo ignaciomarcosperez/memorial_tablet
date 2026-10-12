@@ -1519,6 +1519,20 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
      *
      * @param wakeTimeMs Unix timestamp in milliseconds for the wake time
      */
+    /**
+     * Digital Memorial: an exact alarm clock. HyperOS defers the inexact alarms of a kiosk app by days
+     * ("power_pending" in dumpsys alarm), so a screen switched off at night never came back on. setAlarmClock is not
+     * deferred; it needs USE_EXACT_ALARM (API 33+, granted at install) or SCHEDULE_EXACT_ALARM (API 31-32).
+     */
+    private fun setScreenAlarm(alarmManager: android.app.AlarmManager, atMs: Long, pendingIntent: android.app.PendingIntent) {
+        val exactAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+        if (exactAllowed) {
+            alarmManager.setAlarmClock(android.app.AlarmManager.AlarmClockInfo(atMs, null), pendingIntent)
+        } else {
+            alarmManager.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, atMs, pendingIntent)
+        }
+    }
+
     @ReactMethod
     fun scheduleScreenWake(wakeTimeMs: Double, promise: Promise) {
         try {
@@ -1535,12 +1549,7 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
 
-            // setAndAllowWhileIdle works in Doze mode without SCHEDULE_EXACT_ALARM permission
-            alarmManager.setAndAllowWhileIdle(
-                android.app.AlarmManager.RTC_WAKEUP,
-                wakeTimeMs.toLong(),
-                pendingIntent
-            )
+            setScreenAlarm(alarmManager, wakeTimeMs.toLong(), pendingIntent)
 
             val calendar = java.util.Calendar.getInstance().apply { timeInMillis = wakeTimeMs.toLong() }
             val timeStr = String.format("%02d:%02d:%02d", 
@@ -1576,12 +1585,7 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
 
-            // setAndAllowWhileIdle works in Doze mode without SCHEDULE_EXACT_ALARM permission
-            alarmManager.setAndAllowWhileIdle(
-                android.app.AlarmManager.RTC_WAKEUP,
-                sleepTimeMs.toLong(),
-                pendingIntent
-            )
+            setScreenAlarm(alarmManager, sleepTimeMs.toLong(), pendingIntent)
 
             val calendar = java.util.Calendar.getInstance().apply { timeInMillis = sleepTimeMs.toLong() }
             val timeStr = String.format("%02d:%02d:%02d",

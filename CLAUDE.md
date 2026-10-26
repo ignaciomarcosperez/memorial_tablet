@@ -43,6 +43,10 @@ it holds the product spec, data model, invariants, the FreeKiosk/backend boundar
   - `MainActivity.applyDefaultLauncherPolicy`: FreeKiosk is the persistent Home whenever the kiosk is enabled, not
     only with the opt-in setting. HyperOS revokes autostart on every update, so MY_PACKAGE_REPLACED could not relaunch
     the kiosk after a remote update; Android relaunches Home by itself.
+  - `MemorialAdminExit.kt` (+ a call in `KioskModule.exitKioskMode` and at the top of `MainActivity`): because
+    FreeKiosk is Home, "Exit Kiosk Mode" used to land straight back in the kiosk. The exit now records the boot;
+    until the next reboot a Home launch hands over to the system launcher. Any other launch (icon, ADB provisioning,
+    relaunch after an update) brings the kiosk back.
 - Kiosk hardening is configuration, applied by `pnpm tablet:provision` in the product repo (`HARDENING` list).
 - Updating the APK on an installed frame: HyperOS cancels `adb install` while in lock task; leave kiosk mode first
   (see `../digital-memorial/docs/provisioning.md`).

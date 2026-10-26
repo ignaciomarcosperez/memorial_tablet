@@ -732,7 +732,24 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                             android.util.Log.d("KioskModule", "Full lock task started (Device Owner) with whitelist: $uniqueWhitelist")
                             // Update DE boot flag so the next LOCKED_BOOT_COMPLETED also locks immediately
                             BootReceiver.updateDeBootFlag(reactApplicationContext, true)
-                            
+
+                            // Digital Memorial: FreeKiosk is the persistent Home while the kiosk is on, so Android
+                            // relaunches it after a remote update. Done here because this is where the kiosk really
+                            // starts: MainActivity.applyDefaultLauncherPolicy reads @kiosk_enabled natively and got
+                            // "false" on HyperOS, so the policy was never set.
+                            try {
+                                dpm.clearPackagePersistentPreferredActivities(adminComponent, reactApplicationContext.packageName)
+                                val home = android.content.IntentFilter(Intent.ACTION_MAIN).apply {
+                                    addCategory(Intent.CATEGORY_HOME)
+                                    addCategory(Intent.CATEGORY_DEFAULT)
+                                }
+                                dpm.addPersistentPreferredActivity(
+                                    adminComponent, home, ComponentName(reactApplicationContext, MainActivity::class.java)
+                                )
+                            } catch (e: Exception) {
+                                android.util.Log.e("KioskModule", "Could not set FreeKiosk as Home: ${e.message}")
+                            }
+
                             // Safety net: force unmute audio streams after entering lock task
                             // Samsung/OneUI devices may mute audio in LOCK_TASK_MODE_LOCKED
                             try {

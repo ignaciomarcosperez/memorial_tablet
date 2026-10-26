@@ -456,6 +456,10 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                 // Explicitly stop KioskWatchdogService (#96 fix)
                 stopKioskWatchdog()
 
+                // Digital Memorial: FreeKiosk is the persistent Home, so without this the Home press
+                // after the exit opened the kiosk again
+                MemorialAdminExit.markExited(reactApplicationContext)
+
                 activity.runOnUiThread {
                     try {
                         val dpm = reactApplicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager

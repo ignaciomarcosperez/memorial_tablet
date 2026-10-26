@@ -128,8 +128,8 @@ android {
         // upstream code * 100 + our release, so it always grows (Android only installs a higher one) and
         // stays above upstream's when we move to a newer tag. versionName = upstream version + "-dm.N".
         // Bump both for every APK that goes to a tablet: `pnpm release:apk` refuses to overwrite one.
-        versionCode 5009
-        versionName "2.0.0-beta.5-dm.9"
+        versionCode 5010
+        versionName "2.0.0-beta.5-dm.10"
 
         // Expose self-update flag to both Kotlin (BuildConfig) and JS (via UpdateModule constants)
         buildConfigField "boolean", "ENABLE_SELF_UPDATE", "${enableSelfUpdate}"

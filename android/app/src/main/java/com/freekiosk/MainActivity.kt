@@ -243,6 +243,12 @@ class MainActivity : ReactActivity() {
     devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     adminComponent = ComponentName(this, DeviceAdminReceiver::class.java)
 
+    // Digital Memorial: after "Exit Kiosk Mode", Home goes to the system launcher until the next reboot
+    if (MemorialAdminExit.handOffIfExited(this, intent)) {
+      finish()
+      return
+    }
+
     // Register screen state receiver to track screen on/off events
     registerScreenStateReceiver()
     
@@ -302,7 +308,11 @@ class MainActivity : ReactActivity() {
   override fun onNewIntent(intent: Intent?) {
     super.onNewIntent(intent)
     setIntent(intent) // Important: update the intent
-    
+
+    if (MemorialAdminExit.handOffIfExited(this, intent)) {
+      return
+    }
+
     // Handle ADB config on new intent too (when app is already running)
     // If returns true, the app will restart and we should not continue
     if (handleAdbConfig(intent)) {
